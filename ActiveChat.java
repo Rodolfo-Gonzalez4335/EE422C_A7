@@ -1,40 +1,31 @@
 package assignment7;
 
+import java.net.*;
 import java.util.*;
 
-public class ActiveChat implements Observer {
-	private static Map<String,ArrayList<Observer>> group = new HashMap<String,ArrayList<Observer>>();
-	private static ArrayList<String> keys  = new ArrayList<String>();
+public class ActiveChat {
+	private static Map<Integer,ArrayList<Socket>> activechats = new HashMap<Integer,ArrayList<Socket>>();
+	private static ArrayList<Integer> keyset = new ArrayList<Integer>();
 	
-	public void newmember(Observer c,String name){
-		if (!group.containsKey(name))
-			{
-				ArrayList<Observer> temp =  new ArrayList<Observer>();
-				temp.add(c);
-				group.put(name, temp);
-				keys.add(name);
-			}
+	public static void addmember(Integer key,Socket client)
+	{
+		ArrayList<Socket> temp;
+		if (!activechats.containsValue(key))
+		{	
+			temp =  new ArrayList<Socket>();
+			temp.add(client);
+			activechats.put(key, temp);
+			keyset.add(key);
+		}
 		else 
-			group.get(name).add(c);
-		
-	}
-	@Override
-	public void update(Observer client) {
-		for (String i : keys)
 		{
-			ArrayList<Observer> temp = group.get(i);
-			temp.remove(client);
+			activechats.get(key).add(client);//check if this works
 		}
 	}
 	
+	//public static void updateMap()
 	
 	public static int numberofchats(){
-		return keys.size();
+		return keyset.size();
 	}
-	
-	public static void printkeys(){
-		for (String i :  keys)
-			System.out.println(i);
-	}
-
 }
