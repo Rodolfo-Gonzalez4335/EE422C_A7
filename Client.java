@@ -84,7 +84,7 @@ public class Client extends Application {
 			while ((inmsg = reader.readLine())!= null)
 			{	System.out.println(inmsg);
 			// Display to the text area 
-			ta.appendText("Message " + inmsg+ "\n"); }
+			ta.appendText("Message from client" + inmsg+ "\n"); }
 			} catch (Exception e1) {
 				e1.printStackTrace();
 			}

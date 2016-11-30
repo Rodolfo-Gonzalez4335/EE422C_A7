@@ -127,17 +127,31 @@ public class MultiThreadServer extends Application
 	
 		private boolean checkforkeyword(String msg)
 		{	
+			if (msg.length()<8) return false;
 			String temp= msg.substring(0, 6);
-			System.out.println("Checking temp " +temp);
+			String temp3= msg.substring(7, 8);
+			
 			if (msg.equals("join chat"))
 			{
 				//ta.appendText("There are a total of "+ ActiveChat.numberofchats() + " chats available\n");
 				//ta.appendText("Would you like to join one or create one keywords join/create");
 			}
-			else if (temp.equals("client "))
+			else if (temp.equals("client"))
 			{
+				
 				if (msg.length()>6)
-					ClientData.senddirectmessage(Integer.getInteger(msg.substring(7)), msg);
+				{
+					msg = msg.substring(8);
+					try {
+						Integer clientnumber=Integer.parseInt(temp3);
+						System.out.println("Number gotten: "+clientnumber);
+						ClientData.senddirectmessage(clientnumber, msg);
+					}catch (NumberFormatException e)
+					{
+						return false;
+					}
+					
+				}
 				return true;
 			}
 			return false;

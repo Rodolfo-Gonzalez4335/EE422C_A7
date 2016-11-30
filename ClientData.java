@@ -59,11 +59,11 @@ public class ClientData {
 	
 	public static void senddirectmessage(Integer client, String msg)
 	{
-		if (client>0 && client< keyset.size())
+		if (client.intValue()>0 && client.intValue()<= keyset.size())
 		{
 			try {
 				
-			Socket socket = keyset.get(client);
+			Socket socket = keyset.get(client-1);
 			outputclient = new PrintStream( socket.getOutputStream());
 			outputclient.println(String.valueOf(ids.get(clientsendingmessage))+" "+ msg );
 			outputclient.flush();
