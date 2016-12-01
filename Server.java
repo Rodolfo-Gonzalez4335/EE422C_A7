@@ -20,11 +20,11 @@ public class Server {
 			in = new InputStreamReader(socket.getInputStream());
 			out = new PrintWriter(socket.getOutputStream());
 			reader = new BufferedReader(in);
-			
+
 			// loop keeps reading from client, squares it, and sends the result
 			// back to the client.
 			while (true) {
-				String msg =reader.readLine();
+				String msg = reader.readLine();
 				System.out.println("Server received " + msg);
 				out.println(msg);
 				out.flush();
@@ -32,8 +32,7 @@ public class Server {
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-		}	
+		}
 	}
-	
 
 }
