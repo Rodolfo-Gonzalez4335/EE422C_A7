@@ -1,0 +1,270 @@
+package assignment7;
+
+
+import java.io.*; 
+import java.net.*;
+import java.util.ArrayList;
+
+import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Insets; 
+import javafx.geometry.Pos; 
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label; 
+import javafx.scene.control.ScrollPane; 
+import javafx.scene.control.TextArea;
+
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.stage.Stage; 
+
+
+public class Client extends Application { 
+	TextField tf = new TextField(); 
+	TextField tf_user = new TextField(); 
+	TextArea ta = new TextArea();
+	// IO streams 
+	String username, address = "localhost";
+	int port = 8000;
+	InputStreamReader in;
+	BufferedReader reader;
+	Socket socket;
+	PrintStream toServer = null; 
+	InputStreamReader fromServer = null;
+	ArrayList<String> users;
+	Boolean isConnected = false;
+
+	public void ListenThread() 
+    {
+         Thread IncomingReader = new Thread(new IncomingReader());
+         IncomingReader.start();
+    }
+	
+	public class IncomingReader implements Runnable
+    {
+        @Override
+        public void run() 
+        {
+            String[] data;
+            String stream, done = "Done", connect = "Connect", disconnect = "Disconnect", chat = "Chat";
+
+            try 
+            {
+                while ((stream = reader.readLine()) != null) 
+                {
+                     data = stream.split(":");
+
+                     if (data[2].equals(chat)) 
+                     {
+                        ta.appendText(data[0] + ": " + data[1] + "\n");
+                       // ta.setCaretPosition(ta.getDocument().getLength());
+                     } 
+                     else if (data[2].equals(connect))
+                     {
+                        ta.clear();
+                        userAdd(data[0]);
+                     } 
+                     else if (data[2].equals(disconnect)) 
+                     {
+                         userRemove(data[0]);
+                     } 
+                     else if (data[2].equals(done)) 
+                     {
+                        //users.setText("");
+                        writeUsers();
+                        users.clear();
+                     }
+                }
+           }catch(Exception ex) { }
+        }
+    }
+	
+	public void userAdd(String data) 
+    {
+         users.add(data);
+    }
+	
+	public void userRemove(String data) 
+    {
+         ta.appendText(data + " is now offline.\n");
+    }
+	
+	public void writeUsers() 
+    {
+         String[] tempList = new String[(users.size())];
+         users.toArray(tempList);
+         for (String token:tempList) 
+         {
+             //users.append(token + "\n");
+         }
+    }
+
+	public void sendDisconnect() 
+    {
+        String bye = (username + ": :Disconnect");
+        try
+        {
+            toServer.println(bye); 
+            toServer.flush(); 
+        } catch (Exception e) 
+        {
+            ta.appendText("Could not send Disconnect message.\n");
+        }
+    }
+	
+	public void Disconnect() 
+    {
+        try 
+        {
+            ta.appendText("Disconnected.\n");
+            socket.close();
+        } catch(Exception ex) {
+            ta.appendText("Failed to disconnect. \n");
+        }
+        isConnected = false;
+        tf.setEditable(true);
+
+    }
+	
+	@Override // Override the start method in the Application class 
+	public void start(Stage primaryStage) { 
+		// Panel p to hold the label and text field 
+		BorderPane paneForTextField = new BorderPane(); 
+		paneForTextField.setPadding(new Insets(5, 5, 5, 5)); 
+		paneForTextField.setStyle("-fx-border-color: green"); 
+		paneForTextField.setLeft(new Label("Enter a text: ")); 
+
+		//TextField tf = new TextField(); 
+		tf.setAlignment(Pos.TOP_RIGHT); 
+		paneForTextField.setCenter(tf); 
+		
+		final ChoiceBox<String> stats = new ChoiceBox<String>();
+		stats.setTooltip(new Tooltip("Select user to talk to"));
+		stats.setValue("");
+		
+		BorderPane paneForTextField1 = new BorderPane(); 
+		paneForTextField1.setPadding(new Insets(15, 15, 15, 15)); 
+		paneForTextField1.setStyle("-fx-border-color: green"); 
+		paneForTextField1.setLeft(new Label("Username: ")); 
+		tf_user.setAlignment(Pos.BOTTOM_RIGHT); 
+		paneForTextField1.setBottom(tf_user); 
+
+		Button connected = new Button("Connect");
+		Button disconnected = new Button("Disconnect");
+		Button check = new Button("Check");
+		HBox hb = new HBox();
+		hb.getChildren().addAll(connected, disconnected, check);
+		
+		BorderPane mainPane = new BorderPane(); 
+		// Text area to display contents 
+		//TextArea ta = new TextArea(); 
+		mainPane.setCenter(new ScrollPane(ta)); 
+		mainPane.setTop(paneForTextField); 
+		mainPane.setLeft(paneForTextField1);
+		mainPane.setBottom(hb);
+		
+		
+		
+		
+		
+		connected.setOnAction(new EventHandler<ActionEvent>(){
+			@Override
+			public void handle(ActionEvent e){
+				if (isConnected == false) 
+		        {
+		            username = tf_user.getText();
+		            tf_user.setEditable(false);
+
+		            try 
+		            {
+		                socket = new Socket(address, port);
+		                InputStreamReader streamreader = new InputStreamReader(socket.getInputStream());
+		                reader = new BufferedReader(streamreader);
+		                toServer = new PrintStream(socket.getOutputStream());
+		                toServer.println(username + ":has connected.:Connect");
+		                toServer.flush(); 
+		                isConnected = true; 
+		            } 
+		            catch (Exception ex) 
+		            {
+		                ta.appendText("Cannot Connect! Try Again. \n");
+		                tf_user.setEditable(true);
+		            }
+		            
+		            ListenThread();
+		            
+		        } else if (isConnected == true) 
+		        {
+		            ta.appendText("You are already connected. \n");
+		        }
+			}
+		});
+		
+		disconnected.setOnAction(new EventHandler<ActionEvent>(){
+			@Override
+			public void handle(ActionEvent e){
+				sendDisconnect();
+		        Disconnect();
+			}
+		});
+		
+		
+
+
+		// Create a scene and place it in the stage 
+		Scene scene = new Scene(mainPane, 700, 250); 
+		//((BorderPane) scene.getRoot()).getChildren().addAll(connected);
+		
+		primaryStage.setTitle("Client"); // Set the stage title 
+		primaryStage.setScene(scene); // Place the scene in the stage 
+		primaryStage.show(); // Display the stage 
+
+		tf.setOnAction(e -> { 
+				
+				String nothing = "";
+		        if ((tf.getText()).equals(nothing)) {
+		            tf.setText("");
+		            tf.requestFocus();
+		        } else {
+		            try {
+		               toServer.println(username + ":" + tf.getText() + ":" + "Chat");
+		               toServer.flush(); // flushes the buffer
+		            } catch (Exception ex) {
+		                ta.appendText("Message was not sent. \n");
+		            }
+		            tf.setText("");
+		            tf.requestFocus();
+		        }
+
+		        tf.setText("");
+		        tf.requestFocus();
+
+		}); 
+/*
+		try { 
+			// Create a socket to connect to the server 
+			@SuppressWarnings("resource")
+			Socket socket = new Socket("localhost", 8000); 
+			// Socket socket = new Socket("130.254.204.36", 8000); 
+			// Socket socket2 = new Socket("drake.Armstrong.edu", 8000); 
+
+			// Create an input stream to receive data from the server 
+			fromServer = new InputStreamReader(socket.getInputStream()); 
+			// Create an output stream to send data to the server 
+			toServer = new PrintStream(socket.getOutputStream()); 
+		} 
+		catch (IOException ex) { 
+			//ta.appendText(ex.toString() + '\n');
+		}*/
+	}
+	
+	public static void main(String[] args) {
+		launch(args);
+	}
+}
